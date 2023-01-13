@@ -1,6 +1,16 @@
 const express = require('express');
-
+const mongoose = require('mongoose');
+var cors = require('cors')
 const app = express();
+const Thing = require('./models/things.js');
+const Product = require('./models/products.js');
+app.use(cors())
+mongoose.connect('mongodb://Oswin:220301@localhost:27017/nodedb',
+  { useNewUrlParser: true,
+    useUnifiedTopology: true })
+  .then(() => console.log('Connexion à MongoDB réussie !'))
+  .catch(() => console.log('Connexion à MongoDB échouée !'));
+
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -9,40 +19,66 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     next();
   });
+  
   app.post('/api/stuff', (req, res, next) => {
-    console.log(req.body);
-    res.status(201).json({
-      message: 'Objet créé !'
+    delete req.body._id;
+    const thing = new Thing({
+      ...req.body
     });
+    thing.save()
+      .then(() => res.status(201).json({ message: 'Objet enregistré !'}))
+      .catch(error => res.status(400).json({ error }));
   });
-app.get('/api/stuff', (req, res, next) => {
-    const stuff = [
-      {
-        _id: 'oeihfzeoi',
-        title: 'Mon premier objet',
-        description: 'Les infos de mon premier objet',
-        imageUrl: 'https://cdn.pixabay.com/photo/2019/06/11/18/56/camera-4267692_1280.jpg',
-        price: 4900,
-        userId: 'qsomihvqios',
-      },
-      {
-        _id: 'oeihfzeomoihi',
-        title: 'Mon deuxième objet',
-        description: 'Les infos de mon deuxième objet',
-        imageUrl: 'https://cdn.pixabay.com/photo/2019/06/11/18/56/camera-4267692_1280.jpg',
-        price: 2900,
-        userId: 'qsomihvqios',
-      },
-      {
-        title: 'Mystery box',
-        description: 'Une boîte mystere',
-        price: 20000,
-        imageUrl: 'https://www.boitesmysteres.fr/clients/boitesmysteres/documents/boite.png',
-        _id: '1673450370208',
-        userId: 'userID40282382'
-      }
-    ];
-    res.status(200).json(stuff);
+  app.get('/api/stuff', (req, res, next) => {
+    Thing.find()
+      .then(things => res.status(200).json(things))
+      .catch(error => res.status(400).json({ error }));
   });
-
+  app.get('/api/stuff/:id', (req, res, next) => {
+    Thing.findOne({ _id: req.params.id })
+      .then(thing => res.status(200).json(thing))
+      .catch(error => res.status(404).json({ error }));
+  });
+  app.put('/api/stuff/:id', (req, res, next) => {
+    Thing.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
+      .then(() => res.status(200).json({ message: 'Objet modifié !'}))
+      .catch(error => res.status(400).json({ error }));
+  });
+  app.delete('/api/stuff/:id', (req, res, next) => {
+    Thing.deleteOne({ _id: req.params.id })
+      .then(() => res.status(200).json({ message: 'Objet supprimé !'}))
+      .catch(error => res.status(400).json({ error }));
+  });
+  app.post('/api/products', (req, res, next) => {
+    const product = new Product({
+      ...req.body
+    });
+    product.save()
+      .then(() => res.status(201).json({ product }))
+      .catch(error => res.status(400).json({ error }));
+  });
+   
+  app.get('/api/products/:id', (req, res, next) => {
+    Product.findOne({ _id: req.params.id })
+      .then(product => res.status(200).json({ product }))
+      .catch(error => res.status(404).json({ error }));
+  });
+   
+  app.put('/api/products/:id', (req, res, next) => {
+    Product.updateOne({ _id: req.params.id }, { ...req.body, _id: req.params.id })
+      .then(() => res.status(200).json({ message: 'Objet modifié !'}))
+      .catch(error => res.status(400).json({ error }));
+  });
+   
+  app.delete('/api/products/:id', (req, res, next) => {
+    Product.deleteOne({ _id: req.params.id })
+      .then(() => res.status(200).json({ message: 'Deleted !'}))
+      .catch(error => res.status(400).json({ error }));
+  });
+   
+  app.get('/api/products', (req, res, next) => {
+      Product.find()
+        .then(products => res.status(200).json({ products }))
+        .catch(error => res.status(400).json({ error }));
+  });
 module.exports = app;
